@@ -1,158 +1,65 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#08090d">
-  <meta name="description" content="An interactive neon tube experiment. Move your cursor to bend the light; click to change the palette.">
-  <title>Light — an interactive light study</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    :root { color-scheme:dark; --ink:#f4f2f0; --muted:#999aa6; --line:rgba(255,255,255,.17); --accent:#c0ff75; }
-    * { box-sizing:border-box; }
-    html { scroll-behavior:smooth; }
-    body { margin:0; min-width:320px; background:#08090d; color:var(--ink); font-family:'Space Grotesk',Arial,sans-serif; }
-    button,a { -webkit-tap-highlight-color:transparent; }
-    button:focus-visible,a:focus-visible { outline:2px solid var(--accent); outline-offset:5px; }
-    .stage { position:relative; isolation:isolate; min-height:720px; min-height:100svh; overflow:hidden; background:radial-gradient(ellipse at 52% 53%,#161322 0%,#090a10 54%,#050609 100%); }
-    .stage:after { content:""; position:absolute; inset:0; z-index:1; pointer-events:none; background:linear-gradient(90deg,rgba(5,6,9,.89) 0%,rgba(5,6,9,.56) 34%,transparent 65%),linear-gradient(0deg,rgba(5,6,9,.75),transparent 23%); }
-    #Light { display:block; width:100%; height:100%; position:absolute; inset:0; z-index:0; touch-action:pan-y; }
-    .ambient { position:absolute; z-index:1; pointer-events:none; width:min(78vw,1100px); height:100%; right:-9%; top:0; opacity:.23; }
-    .grain { position:absolute; inset:0; z-index:2; pointer-events:none; opacity:.12; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.76' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.45'/%3E%3C/svg%3E"); }
-    .shell { position:relative; z-index:3; min-height:720px; min-height:100svh; padding:32px clamp(24px,5.2vw,88px) 29px; display:flex; flex-direction:column; pointer-events:none; }
-    .shell a,.shell button { pointer-events:auto; }
-    .topbar,.bottom { display:flex; align-items:center; justify-content:space-between; gap:20px; }
-    .brand { display:flex; align-items:center; gap:12px; text-decoration:none; color:var(--ink); font-weight:700; letter-spacing:-.05em; font-size:22px; }
-    .brand-mark { width:27px; height:26px; display:flex; align-items:center; gap:3px; transform:rotate(-28deg); }
-    .brand-mark i { display:block; width:5px; height:21px; border-radius:9px; background:#f994ed; box-shadow:0 0 12px #f994ed; }
-    .brand-mark i:nth-child(2) { height:26px; background:#c0ff75; box-shadow:0 0 12px #c0ff75; }
-    .brand-mark i:nth-child(3) { height:16px; background:#8b7bff; box-shadow:0 0 12px #8b7bff; }
-    .eyebrow,.top-note,.edition,.instruction-label,.bottom,.cta,.status { font-family:'DM Mono',monospace; text-transform:uppercase; font-size:11px; letter-spacing:.12em; }
-    .top-note { color:#bdbdc6; display:flex; align-items:center; gap:10px; }
-    .live-dot { width:7px; height:7px; border-radius:50%; background:var(--accent); box-shadow:0 0 12px var(--accent); }
-    .top-link { color:var(--ink); text-decoration:none; border-bottom:1px solid var(--line); padding-bottom:6px; transition:color .2s,border-color .2s; }
-    .top-link:hover { color:var(--accent); border-color:var(--accent); }
-    .hero { flex:1; display:flex; flex-direction:column; justify-content:center; align-items:flex-start; padding:54px 0 75px; max-width:660px; }
-    .eyebrow { display:flex; align-items:center; gap:13px; color:var(--accent); margin:0 0 27px; }
-    .eyebrow:before { content:""; width:27px; height:1px; background:var(--accent); }
-    h1 { font-size:clamp(78px,12.1vw,196px); line-height:.78; letter-spacing:-.105em; font-weight:600; margin:0 0 35px -9px; }
-    h1 span { display:block; font-size:.8em; color:transparent; -webkit-text-stroke:1.5px rgba(255,255,255,.72); letter-spacing:-.095em; margin-top:13px; }
-    .hero-copy { color:#c3c1cb; font-size:clamp(16px,1.45vw,20px); line-height:1.55; max-width:380px; margin:0 0 35px; text-wrap:pretty; }
-    .actions { display:flex; align-items:center; gap:23px; flex-wrap:wrap; }
-    .cta { background:var(--accent); color:#0b1006; border:1px solid var(--accent); padding:17px 22px; min-height:51px; cursor:pointer; font-weight:500; transition:transform .2s,background .2s,box-shadow .2s; }
-    .cta:hover { transform:translateY(-2px); background:#d5ffab; box-shadow:0 6px 28px rgba(192,255,117,.22); }
-    .cta:active { transform:translateY(0); }
-    .action-hint { color:#a7a7b0; font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.03em; }
-    .instruction { position:absolute; right:clamp(24px,5.2vw,88px); top:48%; transform:translateY(-50%); width:150px; border-top:1px solid var(--line); padding-top:15px; color:#d0ced7; }
-    .instruction-label { color:var(--accent); margin:0 0 13px; }
-    .instruction p:last-child { font-size:13px; line-height:1.55; margin:0; }
-    .bottom { border-top:1px solid var(--line); padding-top:20px; color:#a3a3ae; }
-    .bottom strong { color:#eeeef2; font-weight:400; }
-    .bottom-center { display:flex; align-items:center; gap:10px; }
-    .bottom-center:before { content:""; width:25px; height:1px; background:var(--accent); }
-    .bottom a { color:inherit; text-decoration:none; border-bottom:1px solid var(--line); padding-bottom:3px; }
-    .bottom a:hover { color:var(--accent); }
-    .status { position:absolute; z-index:4; right:clamp(24px,5.2vw,88px); bottom:90px; color:#d8d5df; pointer-events:none; opacity:0; transform:translateY(7px); transition:opacity .25s,transform .25s; }
-    .status.visible { opacity:1; transform:translateY(0); }
-    @media(max-width:800px) { .instruction { display:none; } .stage:after { background:linear-gradient(90deg,rgba(5,6,9,.87),rgba(5,6,9,.38) 75%),linear-gradient(0deg,rgba(5,6,9,.78),transparent 28%); } .hero { max-width:590px; } }
-    @media(max-width:600px) { .stage,.shell { min-height:680px; min-height:100svh; } .ambient { width:700px; height:100%; right:-300px; opacity:.45; } .shell { padding:23px 23px 24px; } .top-note { display:none; } .brand { font-size:20px; } .top-link { font-size:10px; } .hero { padding:40px 0 60px; } .eyebrow { font-size:10px; margin-bottom:30px; } h1 { font-size:clamp(79px,20vw,125px); margin-left:-5px; margin-bottom:31px; } h1 span { margin-top:11px; } .hero-copy { font-size:16px; max-width:295px; } .actions { gap:15px; } .action-hint { max-width:110px; line-height:1.5; } .bottom { font-size:9px; gap:8px; } .bottom-center { display:none; } .status { bottom:72px; right:23px; font-size:9px; } }
-    @media(prefers-reduced-motion:reduce) { *,*:before,*:after { scroll-behavior:auto!important; transition-duration:.01ms!important; animation-duration:.01ms!important; } }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Test Website</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to right, #0078D4, #00B4FF);
+            color: white;
+            text-align: center;
+            padding-top: 100px;
+        }
+        .card {
+            background: rgba(255,255,255,0.1);
+            padding: 30px;
+            border-radius: 15px;
+            display: inline-block;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        h1 {
+            margin-bottom: 10px;
+        }
+        p {
+            font-size: 18px;
+        }
+        .btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            background: white;
+            color: #0078D4;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn:hover {
+            background: #f0f0f0;
+        }
+    </style>
 </head>
 <body>
-  <main class="stage" id="experience">
-    <canvas id="tubes" aria-label="Interactive neon tubes respond to pointer movement"></canvas>
-    <svg class="ambient" viewBox="0 0 900 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
-      <defs><filter id="glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="12"/></filter></defs>
-      <g fill="none" stroke-linecap="round">
-        <path d="M-60 790 C 210 655, 645 690, 1060 100" stroke="#fa75e5" stroke-width="16" filter="url(#glow)"/>
-        <path d="M-60 790 C 210 655, 645 690, 1060 100" stroke="#fa75e5" stroke-width="3"/>
-        <path d="M-80 836 C 250 604, 560 740, 1080 140" stroke="#a67dff" stroke-width="15" filter="url(#glow)"/>
-        <path d="M-80 836 C 250 604, 560 740, 1080 140" stroke="#a67dff" stroke-width="3"/>
-        <path d="M-100 880 C 320 670, 700 640, 1090 190" stroke="#bfff79" stroke-width="15" filter="url(#glow)"/>
-        <path d="M-100 880 C 320 670, 700 640, 1090 190" stroke="#bfff79" stroke-width="3"/>
-      </g>
-    </svg>
-    <div class="grain" aria-hidden="true"></div>
-    <div class="shell">
-      <header class="topbar">
-        <a class="brand" href="#experience" aria-label="Tubes home"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span> tubes.</a>
-        <span class="top-note"><span class="live-dot"></span> An interactive light study</span>
-        <a class="top-link eyebrow" style="margin:0;color:var(--ink)" href="https://www.framer.com/@kevin-levron/" target="_blank" rel="noopener noreferrer">Original concept ↗</a>
-      </header>
-      <section class="hero" aria-labelledby="title">
-        <p class="eyebrow">No. 01 / Digital playground</p>
-        <h1 id="title">Tubes<span>Cursor</span></h1>
-        <p class="hero-copy">Light with a mind of its own. Move your cursor and watch the neon follow. Change the mood in a single click.</p>
-        <div class="actions">
-          <button class="cta" type="button" id="shuffle">Change the colors <span aria-hidden="true">↗</span></button>
-          <span class="action-hint">Or click anywhere on the canvas</span>
-        </div>
-      </section>
-      <div class="instruction" aria-hidden="true"><p class="instruction-label">01 / Interact</p><p>Move around.<br>Break the pattern.<br>Make it yours.</p></div>
-      <footer class="bottom"><span><strong>Built to play.</strong> Made to move.</span><span class="bottom-center">Move cursor to explore</span><a href="https://www.framer.com/@kevin-levron/" target="_blank" rel="noopener noreferrer">Credit: Kevin Levron ↗</a></footer>
+    <div class="card">
+        <h1>🚀 Azure Web Test</h1>
+        <p>Website ini berhasil berjalan di Microsoft Azure!</p>
+        <p id="time"></p>
+        <button class="btn" onclick="showMessage()">Klik Saya</button>
     </div>
-    <div class="status" id="status" role="status" aria-live="polite">New palette loaded</div>
-  </main>
-  <script type="module">
-    const canvas = document.querySelector('#tubes');
-    const shuffle = document.querySelector('#shuffle');
-    const status = document.querySelector('#status');
-    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    let app = null, fallback = null, statusTimer;
-    let palette = ['#f967fb', '#53bc28', '#6958d5'];
-    let lights = ['#83f36e', '#fe8a2e', '#ff008a', '#60aed5'];
-    const randomColors = count => Array.from({length:count}, () => '#' + Math.floor(Math.random()*0xffffff).toString(16).padStart(6,'0'));
-    function announce() { status.classList.add('visible'); clearTimeout(statusTimer); statusTimer = setTimeout(() => status.classList.remove('visible'), 1600); }
-    function changeColors() {
-      palette = randomColors(3); lights = randomColors(4);
-      if (app?.tubes) { app.tubes.setColors(palette); app.tubes.setLightsColors(lights); }
-      else if (fallback) fallback.draw();
-      announce();
-    }
-    shuffle.addEventListener('click', changeColors);
-    canvas.addEventListener('click', changeColors);
 
-    // Offline/WebGL fallback: layered illuminated curves retain the interaction.
-    function startFallback() {
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-      let width=0,height=0, dpr=1, x=.65, y=.48, tx=x,ty=y,frame=0;
-      function resize() { dpr=Math.min(devicePixelRatio||1,2); width=canvas.clientWidth; height=canvas.clientHeight; canvas.width=Math.round(width*dpr); canvas.height=Math.round(height*dpr); ctx.setTransform(dpr,0,0,dpr,0,0); draw(); }
-      function draw() {
-        ctx.clearRect(0,0,width,height);
-        const scale=Math.max(.55,Math.min(width/1200,1.25));
-        for(let i=0;i<13;i++) {
-          const t=i-6, hue=palette[((i%3)+3)%3], offset=t*23*scale;
-          const ax=width*.37+offset*.64, ay=height*1.16+offset*.42;
-          const bx=width*.96+offset*.65, by=-height*.22+offset*.26;
-          const cx=width*(.55+x*.19)+offset*.35, cy=height*(.28+y*.30)+offset*.26;
-          ctx.beginPath();ctx.moveTo(ax,ay);ctx.bezierCurveTo(width*.40+offset*.7,height*.59+offset*.25,cx,cy,bx,by);
-          ctx.strokeStyle=hue; ctx.lineCap='round'; ctx.lineWidth=8*scale; ctx.shadowBlur=27*scale;ctx.shadowColor=hue;ctx.globalAlpha=.22;ctx.stroke();
-          ctx.lineWidth=3.5*scale;ctx.shadowBlur=10*scale;ctx.globalAlpha=.85;ctx.stroke();
-          ctx.lineWidth=1.2*scale;ctx.strokeStyle='#ffffff';ctx.shadowBlur=0;ctx.globalAlpha=.55;ctx.stroke();
+    <script>
+        function showMessage() {
+            alert("Halo! Website kamu sudah berhasil berjalan di Azure 🎉");
         }
-        ctx.globalAlpha=1;
-      }
-      function animate(){ x+=(tx-x)*.055;y+=(ty-y)*.055;draw();frame=requestAnimationFrame(animate); }
-      function move(e){tx=e.clientX/innerWidth;ty=e.clientY/innerHeight;if(reduced){x=tx;y=ty;draw();}}
-      window.addEventListener('pointermove',move,{passive:true});window.addEventListener('resize',resize);
-      resize();if(!reduced) frame=requestAnimationFrame(animate);
-      return {draw,stop(){cancelAnimationFrame(frame);window.removeEventListener('pointermove',move);window.removeEventListener('resize',resize);}};
-    }
-    // The supplied 3D cursor build is loaded directly, without a React/tooling requirement.
-    try {
-      if (!window.WebGLRenderingContext) throw new Error('WebGL unavailable');
-      const module = await import('https://cdn.jsdelivr.net/npm/threejs-components@0.0.19/build/cursors/tubes1.min.js');
-      app = module.default(canvas, {tubes:{colors:palette,lights:{intensity:200,colors:lights}}});
-      document.documentElement.dataset.renderer='3d';
-    } catch(error) {
-      console.warn('3D renderer unavailable; using interactive canvas fallback.',error);
-      fallback = startFallback();
-      document.documentElement.dataset.renderer='fallback';
-    }
-  </script>
+
+        function updateTime() {
+            const now = new Date();
+            document.getElementById("time").innerText = "Waktu sekarang: " + now.toLocaleString();
+        }
+
+        setInterval(updateTime, 1000);
+        updateTime();
+    </script>
 </body>
 </html>
